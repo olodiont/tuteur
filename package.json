@@ -1,0 +1,67 @@
+{
+  "name": "tuteur",
+  "displayName": "@tuteur",
+  "description": "Un tuteur dans le chat de VS Code qui t'aide à débloquer tes exercices sans te donner la solution.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Education"
+  ],
+  "activationEvents": [],
+  "extensionDependencies": [
+    "github.copilot-chat"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "tuteur.tuteur",
+        "name": "tuteur",
+        "fullName": "Tuteur",
+        "isSticky": true,
+        "description": "Explique ton blocage : je t'aide à avancer sans te donner la solution.",
+        "commands": [
+          {
+            "name": "demarrer",
+            "description": "Je ne sais pas par où commencer : colle l'énoncé"
+          },
+          {
+            "name": "explique",
+            "description": "Mini-cours sur une notion (ex : /explique HashMap)"
+          },
+          {
+            "name": "indice",
+            "description": "Indice suivant, plus précis, sur le blocage en cours"
+          },
+          {
+            "name": "rappel",
+            "description": "Révision rapide des notions à revoir"
+          },
+          {
+            "name": "notions",
+            "description": "Liste des notions travaillées"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "vitest run",
+    "package": "vsce package --allow-missing-repository --skip-license"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^4.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
