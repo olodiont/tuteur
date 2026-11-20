@@ -17,6 +17,29 @@ export function calculerPalier(commandesPrecedentes: (string | undefined)[]): nu
   return Math.min(1 + consecutifs, PALIER_MAX);
 }
 
+const COMMANDES: Mode[] = ['demarrer', 'explique', 'indice', 'rappel'];
+
+/**
+ * Mode de la requête. Sans commande, une réponse donnée pendant une révision
+ * (au plus 3 tours après `/rappel`) reste en mode rappel.
+ */
+export function determinerMode(
+  commande: string | undefined,
+  commandesPrecedentes: (string | undefined)[],
+): Mode {
+  if (commande !== undefined) return COMMANDES.includes(commande as Mode) ? (commande as Mode) : 'auto';
+  let toursSansCommande = 0;
+  for (let i = commandesPrecedentes.length - 1; i >= 0; i--) {
+    const c = commandesPrecedentes[i];
+    if (c === undefined) {
+      toursSansCommande++;
+      continue;
+    }
+    return c === 'rappel' && toursSansCommande < 3 ? 'rappel' : 'auto';
+  }
+  return 'auto';
+}
+
 const REGLES_COMMUNES = `Tu es @tuteur, un tuteur de programmation pour un étudiant débutant. Il apprend Java et d'autres langages, surtout à travers des exercices de cours.
 
 Règles, toujours :

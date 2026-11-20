@@ -55,7 +55,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "test": "vitest run",
-    "package": "vsce package --allow-missing-repository --skip-license"
+    "package": "vsce package --no-dependencies --allow-missing-repository --skip-license"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

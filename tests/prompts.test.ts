@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Notion } from '../src/notions';
-import { calculerPalier, Mode, promptSysteme } from '../src/prompts';
+import { calculerPalier, determinerMode, Mode, promptSysteme } from '../src/prompts';
 
 describe('calculerPalier', () => {
   test('premier indice : palier 1', () => {
@@ -53,5 +53,21 @@ describe('promptSysteme', () => {
     const p = promptSysteme('rappel', { notionsARevoir: [n] });
     expect(p).toContain('java-hashmap');
     expect(p).toContain('"revision"');
+  });
+});
+
+describe('determinerMode', () => {
+  test('commande explicite', () => {
+    expect(determinerMode('indice', [])).toBe('indice');
+  });
+  test('sans commande : auto', () => {
+    expect(determinerMode(undefined, ['explique'])).toBe('auto');
+  });
+  test('réponse pendant une révision : reste en rappel', () => {
+    expect(determinerMode(undefined, ['rappel'])).toBe('rappel');
+    expect(determinerMode(undefined, ['rappel', undefined])).toBe('rappel');
+  });
+  test('commande inconnue : auto', () => {
+    expect(determinerMode('bidon', [])).toBe('auto');
   });
 });
