@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -111,5 +111,30 @@ describe('stockage', () => {
     const base = ajouterAide(vide(), { nom: 'HashMap', langage: 'java', type: 'mini-cours' }, AUJ);
     await sauverBase(chemin, base);
     expect(await chargerBase(chemin)).toEqual(base);
+  });
+});
+
+describe('corrections relecture : stockage', () => {
+  test('I4 : un fichier corrompu est sauvegardé en .bak avant de repartir à vide', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuteur-'));
+    const chemin = join(dir, 'notions.json');
+    await writeFile(chemin, '{pas du json');
+    await chargerBase(chemin);
+    expect(await readFile(`${chemin}.bak`, 'utf8')).toBe('{pas du json');
+  });
+
+  test('I4 : la sauvegarde ne laisse pas de fichier temporaire', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuteur-'));
+    const chemin = join(dir, 'notions.json');
+    await sauverBase(chemin, vide());
+    expect(await readdir(dir)).toEqual(['notions.json']);
+  });
+
+  test('M4 : les entrées invalides sont ignorées au chargement', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuteur-'));
+    const chemin = join(dir, 'notions.json');
+    const valide = ajouterAide(vide(), { nom: 'for', langage: 'java', type: 'rappel' }, AUJ).notions[0];
+    await writeFile(chemin, JSON.stringify({ notions: [null, { id: 3 }, valide] }));
+    expect((await chargerBase(chemin)).notions).toEqual([valide]);
   });
 });

@@ -6,15 +6,18 @@ export type Mode = 'auto' | 'demarrer' | 'explique' | 'indice' | 'rappel';
 export const PALIER_MAX = 4;
 
 /**
- * Palier de l'indice demandé : 1 + nombre de `/indice` consécutifs à la fin
- * des tours précédents (du plus ancien au plus récent), plafonné à 4.
+ * Palier de l'indice demandé : 1 + nombre de `/indice` depuis la dernière autre
+ * commande (tours précédents, du plus ancien au plus récent), plafonné à 4.
+ * Les réponses libres (sans commande) ne remettent pas le compteur à zéro.
  */
 export function calculerPalier(commandesPrecedentes: (string | undefined)[]): number {
-  let consecutifs = 0;
-  for (let i = commandesPrecedentes.length - 1; i >= 0 && commandesPrecedentes[i] === 'indice'; i--) {
-    consecutifs++;
+  let indices = 0;
+  for (let i = commandesPrecedentes.length - 1; i >= 0; i--) {
+    const c = commandesPrecedentes[i];
+    if (c === 'indice') indices++;
+    else if (c !== undefined) break;
   }
-  return Math.min(1 + consecutifs, PALIER_MAX);
+  return Math.min(1 + indices, PALIER_MAX);
 }
 
 const COMMANDES: Mode[] = ['demarrer', 'explique', 'indice', 'rappel'];
@@ -45,6 +48,7 @@ const REGLES_COMMUNES = `Tu es @tuteur, un tuteur de programmation pour un étud
 Règles, toujours :
 - Réponds en français, ton direct et bienveillant. Garde le code et les noms techniques tels quels.
 - Ne donne jamais la solution complète de l'exercice. Ton but : qu'il avance lui-même, vite.
+- S'il écrit « donne-moi la solution » ou équivalent, refuse gentiment en une phrase et donne à la place l'indice le plus utile pour avancer tout de suite.
 - Réponses courtes. Une seule question à la fois.
 - Tes exemples portent sur un autre cas que son exercice.
 - Son temps compte : un blocage doit se régler en quelques minutes. Pas de longs cours.
@@ -59,7 +63,7 @@ const PALIERS: Record<number, string> = {
   1: `Palier 1 sur 4 : pose une seule question qui l'oriente vers la bonne piste. Pas d'indice direct, pas de code.`,
   2: `Palier 2 sur 4 : donne un indice concret : quelle notion, quelle méthode ou quelle structure utiliser, et pourquoi. Pas de code de son exercice.`,
   3: `Palier 3 sur 4 : donne du pseudo-code ou un squelette avec des trous (\`___\`) qu'il doit compléter. Explique en une phrase ce que va chaque trou.`,
-  4: `Palier 4 sur 4 : donne le code de la seule partie bloquante (quelques lignes), expliqué ligne par ligne. Pas le reste de l'exercice. Termine en lui disant ce qu'il lui reste à faire seul.`,
+  4: `Palier 4 sur 4 : donne le code de la seule partie bloquante (quelques lignes), expliqué ligne par ligne. Pas le reste de l'exercice. Si la partie bloquante est essentiellement tout l'exercice (par exemple une seule méthode courte), reste à un squelette avec des trous, plus détaillé qu'au palier 3. Termine en lui disant ce qu'il lui reste à faire seul.`,
 };
 
 const MODES: Record<Exclude<Mode, 'indice' | 'rappel'>, string> = {
@@ -94,6 +98,7 @@ Pose une question courte sur une notion à la fois, en commençant par la premi�
 Quand il a répondu, dis-lui en une ou deux phrases si c'est juste et corrige si besoin, puis termine par une ligne seule, exactement :
 ${PREFIXE}{"revision":{"id":"<id de la notion>","reussie":<true|false>}}
 Puis pose la question suivante. Quand toutes les notions sont faites, félicite-le en une phrase.
+Si son message n'est pas une réponse à ta question (il demande de l'aide sur autre chose), ne note rien : arrête la révision et aide-le normalement.
 Pas de ligne "notion" dans ce mode.`;
 }
 

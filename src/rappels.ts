@@ -21,6 +21,14 @@ export function selectionRappel(base: BaseNotions, aujourdhui: string): Notion[]
   return notionsDues(base, aujourdhui).slice(0, MAX_RAPPEL);
 }
 
+/** Notions choisies au début de la session `/rappel` et pas encore révisées (toujours dues). */
+export function notionsRappelRestantes(base: BaseNotions, idsGeles: string[], aujourdhui: string): Notion[] {
+  const dues = notionsDues(base, aujourdhui);
+  return idsGeles
+    .map((id) => dues.find((n) => n.id === id))
+    .filter((n): n is Notion => n !== undefined);
+}
+
 export function formaterListeNotions(base: BaseNotions, aujourdhui: string): string {
   if (base.notions.length === 0) return "Aucune notion enregistrée pour l'instant.";
   const dues = new Set(notionsDues(base, aujourdhui).map((n) => n.id));

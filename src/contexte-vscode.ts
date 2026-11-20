@@ -3,7 +3,10 @@ import * as vscode from 'vscode';
 import type { DonneesContexte } from './contexte';
 
 /** Rassemble ce que l'utilisateur a sous les yeux : fichier actif, sélection, erreurs, pièces jointes. */
-export async function collecterContexte(request: vscode.ChatRequest): Promise<DonneesContexte> {
+export async function collecterContexte(
+  request: vscode.ChatRequest,
+  historique: ReadonlyArray<vscode.ChatRequestTurn | vscode.ChatResponseTurn> = [],
+): Promise<DonneesContexte> {
   const donnees: DonneesContexte = { diagnostics: [], references: [] };
 
   const editeur = vscode.window.activeTextEditor;
@@ -22,9 +25,18 @@ export async function collecterContexte(request: vscode.ChatRequest): Promise<Do
       .map((d) => `Ligne ${d.range.start.line + 1} : ${d.message}`);
   }
 
-  for (const ref of request.references) {
+  // Pièces jointes du message actuel, puis celles des messages précédents (l'énoncé joint
+  // à /demarrer reste ainsi visible pour les /indice suivants). Doublons ignorés par nom.
+  const anciennes = historique
+    .filter((t): t is vscode.ChatRequestTurn => t instanceof vscode.ChatRequestTurn)
+    .flatMap((t) => [...t.references]);
+  const vus = new Set<string>();
+  for (const ref of [...request.references, ...anciennes]) {
     const lue = await lireReference(ref);
-    if (lue) donnees.references.push(lue);
+    if (lue && !vus.has(lue.nom)) {
+      vus.add(lue.nom);
+      donnees.references.push(lue);
+    }
   }
   return donnees;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { ajouterAide, BaseNotions } from '../src/notions';
-import { formaterListeNotions, ligneRappel, selectionRappel } from '../src/rappels';
+import { ajouterAide, BaseNotions, enregistrerRevision } from '../src/notions';
+import { formaterListeNotions, ligneRappel, notionsRappelRestantes, selectionRappel } from '../src/rappels';
 
 const AUJ = '2026-11-20';
 
@@ -51,5 +51,20 @@ describe('formaterListeNotions', () => {
     const t = formaterListeNotions(base, AUJ);
     expect(t).toContain('| Notion | Langage | Aides | Prochaine révision |');
     expect(t.indexOf('Due')).toBeLessThan(t.indexOf('Plus tard'));
+  });
+});
+
+describe('I1 : notions gelées de la session de rappel', () => {
+  test('ne garde que les notions gelées encore dues', () => {
+    let base = baseAvec(['a', 'b', 'c', 'd']);
+    const ids = ['java-a', 'java-b', 'java-c'];
+    base = enregistrerRevision(base, 'java-a', true, AUJ);
+    expect(notionsRappelRestantes(base, ids, AUJ).map((n) => n.id)).toEqual(['java-b', 'java-c']);
+  });
+
+  test('toutes révisées : liste vide', () => {
+    let base = baseAvec(['a']);
+    base = enregistrerRevision(base, 'java-a', false, AUJ);
+    expect(notionsRappelRestantes(base, ['java-a'], AUJ)).toEqual([]);
   });
 });

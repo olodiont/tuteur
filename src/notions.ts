@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 export type TypeAide = 'rappel' | 'mini-cours' | 'indice';
@@ -96,17 +96,42 @@ export function notionsDues(base: BaseNotions, aujourdhui: string): Notion[] {
     .sort((a, b) => a.prochaineRevision.localeCompare(b.prochaineRevision));
 }
 
+function estNotion(n: unknown): n is Notion {
+  const x = n as Notion;
+  return (
+    typeof x === 'object' && x !== null &&
+    typeof x.id === 'string' && typeof x.nom === 'string' && typeof x.langage === 'string' &&
+    typeof x.vueLe === 'string' && typeof x.prochaineRevision === 'string' &&
+    typeof x.nbAides === 'number' && typeof x.palier === 'number'
+  );
+}
+
 export async function chargerBase(chemin: string): Promise<BaseNotions> {
+  let brut: string;
   try {
-    const donnees = JSON.parse(await readFile(chemin, 'utf8'));
-    if (donnees && Array.isArray(donnees.notions)) return donnees as BaseNotions;
+    brut = await readFile(chemin, 'utf8');
   } catch {
-    // Fichier absent ou illisible : on repart d'une base vide.
+    return { notions: [] }; // Fichier absent : première utilisation.
   }
+  try {
+    const donnees = JSON.parse(brut);
+    if (donnees && Array.isArray(donnees.notions)) {
+      const base: BaseNotions = { notions: donnees.notions.filter(estNotion) };
+      if (typeof donnees.dernierRappelAffiche === 'string') base.dernierRappelAffiche = donnees.dernierRappelAffiche;
+      return base;
+    }
+  } catch {
+    // JSON illisible : traité ci-dessous.
+  }
+  // Fichier inutilisable : on le garde de côté avant de repartir à vide.
+  await copyFile(chemin, `${chemin}.bak`).catch(() => undefined);
   return { notions: [] };
 }
 
+/** Écriture atomique : fichier temporaire puis renommage, pour ne jamais laisser un fichier à moitié écrit. */
 export async function sauverBase(chemin: string, base: BaseNotions): Promise<void> {
   await mkdir(dirname(chemin), { recursive: true });
-  await writeFile(chemin, JSON.stringify(base, null, 2), 'utf8');
+  const temporaire = `${chemin}.tmp`;
+  await writeFile(temporaire, JSON.stringify(base, null, 2), 'utf8');
+  await rename(temporaire, chemin);
 }

@@ -3,9 +3,9 @@ import { formaterContexte } from './contexte';
 import { collecterContexte } from './contexte-vscode';
 import { FiltreMarqueurs } from './marqueurs';
 import { choisirModele, MESSAGE_SANS_MODELE } from './modele';
-import { ajouterAide, BaseNotions, chargerBase, enregistrerRevision, sauverBase } from './notions';
+import { ajouterAide, BaseNotions, chargerBase, enregistrerRevision, Notion, sauverBase } from './notions';
 import { calculerPalier, determinerMode, promptSysteme } from './prompts';
-import { formaterListeNotions, ligneRappel, selectionRappel } from './rappels';
+import { formaterListeNotions, ligneRappel, notionsRappelRestantes, selectionRappel } from './rappels';
 
 /** Date locale au format YYYY-MM-DD. */
 function aujourdhui(): string {
@@ -19,6 +19,18 @@ function texteReponse(tour: vscode.ChatResponseTurn): string {
   return tour.response
     .map((partie) => (partie instanceof vscode.ChatResponseMarkdownPart ? partie.value.value : ''))
     .join('');
+}
+
+/** Notions figées au dernier `/rappel` de la conversation (stockées dans le résultat de la réponse). */
+function idsRappelDeLaSession(historique: ReadonlyArray<vscode.ChatRequestTurn | vscode.ChatResponseTurn>): string[] {
+  for (let i = historique.length - 1; i >= 0; i--) {
+    const tour = historique[i];
+    if (tour instanceof vscode.ChatResponseTurn) {
+      const ids = tour.result.metadata?.idsRappel;
+      if (Array.isArray(ids)) return ids.filter((id): id is string => typeof id === 'string');
+    }
+  }
+  return [];
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -36,12 +48,21 @@ export function activate(context: vscode.ExtensionContext): void {
     const commandesPrecedentes = chatContext.history
       .filter((t): t is vscode.ChatRequestTurn => t instanceof vscode.ChatRequestTurn)
       .map((t) => t.command);
-    const mode = determinerMode(request.command, commandesPrecedentes);
-    const notionsARevoir = mode === 'rappel' ? selectionRappel(base, jour) : [];
-
-    if (mode === 'rappel' && notionsARevoir.length === 0) {
-      stream.markdown("Rien à revoir aujourd'hui. 👍");
-      return {};
+    let mode = determinerMode(request.command, commandesPrecedentes);
+    let notionsARevoir: Notion[] = [];
+    let idsRappel: string[] | undefined;
+    if (request.command === 'rappel') {
+      notionsARevoir = selectionRappel(base, jour);
+      if (notionsARevoir.length === 0) {
+        stream.markdown("Rien à revoir aujourd'hui. 👍");
+        return {};
+      }
+      idsRappel = notionsARevoir.map((n) => n.id);
+    } else if (mode === 'rappel') {
+      // Réponse pendant une révision : on reprend les notions figées au début de la session.
+      idsRappel = idsRappelDeLaSession(chatContext.history);
+      notionsARevoir = notionsRappelRestantes(base, idsRappel, jour);
+      if (notionsARevoir.length === 0) mode = 'auto';
     }
 
     const modele = await choisirModele(request.model);
@@ -51,7 +72,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     const systeme = promptSysteme(mode, { palier: calculerPalier(commandesPrecedentes), notionsARevoir });
-    const contexte = formaterContexte(await collecterContexte(request));
+    const contexte = formaterContexte(await collecterContexte(request, chatContext.history));
     const messages = [vscode.LanguageModelChatMessage.User(systeme)];
     for (const tour of chatContext.history) {
       if (tour instanceof vscode.ChatRequestTurn) {
@@ -84,6 +105,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (token.isCancellationRequested) return {};
       throw err;
     }
+    if (token.isCancellationRequested) return {};
 
     for (const ev of filtre.evenements) {
       base = 'notion' in ev
@@ -98,7 +120,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }
     await sauverBase(cheminBase, base);
-    return {};
+    return idsRappel ? { metadata: { idsRappel } } : {};
   };
 
   const participant = vscode.chat.createChatParticipant('tuteur.tuteur', handler);

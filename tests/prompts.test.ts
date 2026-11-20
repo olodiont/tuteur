@@ -14,7 +14,7 @@ describe('calculerPalier', () => {
   });
   test('une autre commande remet à zéro', () => {
     expect(calculerPalier(['indice', 'explique'])).toBe(1);
-    expect(calculerPalier(['indice', undefined])).toBe(1);
+
   });
 });
 
@@ -69,5 +69,25 @@ describe('determinerMode', () => {
   });
   test('commande inconnue : auto', () => {
     expect(determinerMode('bidon', [])).toBe('auto');
+  });
+});
+
+describe('corrections relecture', () => {
+  test('I2 : une réponse libre ne remet pas le palier à zéro', () => {
+    expect(calculerPalier(['indice', undefined])).toBe(2);
+    expect(calculerPalier(['indice', undefined, 'indice', undefined])).toBe(3);
+    expect(calculerPalier(['indice', 'demarrer', undefined])).toBe(1);
+  });
+
+  test('M3 : palier 4 reste un squelette si la partie bloquante est tout l’exercice', () => {
+    expect(promptSysteme('indice', { palier: 4 })).toContain('essentiellement tout l');
+  });
+
+  test('M3 : refus explicite de donner la solution', () => {
+    expect(promptSysteme('auto', {})).toContain('donne-moi la solution');
+  });
+
+  test('I1 : le prompt de révision sort du mode si le message n’est pas une réponse', () => {
+    expect(promptSysteme('rappel', { notionsARevoir: [] })).toContain('pas une réponse');
   });
 });
