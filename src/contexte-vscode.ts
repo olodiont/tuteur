@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import type { DonneesContexte } from './contexte';
+import { DonneesContexte, FichierOuvert, LIMITES } from './contexte';
 
 /** Rassemble ce que l'utilisateur a sous les yeux : fichier actif, sélection, erreurs, pièces jointes. */
 export async function collecterContexte(
@@ -38,7 +38,58 @@ export async function collecterContexte(
       donnees.references.push(lue);
     }
   }
+
+  const uriActif = editeur?.document.uri.toString();
+  const onglets = await lireAutresOnglets(uriActif, vus);
+  donnees.autresFichiers = onglets.fichiers;
+  donnees.autresFichiersNonJoints = onglets.nonLus;
+  donnees.erreursProjet = erreursAutresFichiers(uriActif);
   return donnees;
+}
+
+/**
+ * Fichiers ouverts dans d'autres onglets (ex. Student.java pendant qu'on écrit CourseRoster.java),
+ * sauf le fichier actif et les pièces jointes déjà lues.
+ */
+async function lireAutresOnglets(
+  uriActif: string | undefined,
+  dejaJoints: Set<string>,
+): Promise<{ fichiers: FichierOuvert[]; nonLus: number }> {
+  const uris = new Map<string, vscode.Uri>();
+  for (const groupe of vscode.window.tabGroups.all) {
+    for (const onglet of groupe.tabs) {
+      const entree = onglet.input;
+      if (!(entree instanceof vscode.TabInputText)) continue;
+      const cle = entree.uri.toString();
+      if (cle === uriActif || uris.has(cle)) continue;
+      if (entree.uri.scheme !== 'file' && entree.uri.scheme !== 'untitled') continue;
+      uris.set(cle, entree.uri);
+    }
+  }
+  const candidats = [...uris.values()].filter((uri) => !dejaJoints.has(path.basename(uri.fsPath)));
+  const fichiers: FichierOuvert[] = [];
+  for (const uri of candidats.slice(0, LIMITES.autresFichiersMax)) {
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      fichiers.push({ nom: path.basename(uri.fsPath), langage: doc.languageId, contenu: doc.getText() });
+    } catch {
+      // Onglet illisible (binaire, supprimé…) : ignoré.
+    }
+  }
+  return { fichiers, nonLus: Math.max(0, candidats.length - LIMITES.autresFichiersMax) };
+}
+
+/** Erreurs (pas les avertissements) des autres fichiers du projet. */
+function erreursAutresFichiers(uriActif: string | undefined): string[] {
+  const erreurs: string[] = [];
+  for (const [uri, diagnostics] of vscode.languages.getDiagnostics()) {
+    if (uri.toString() === uriActif) continue;
+    for (const d of diagnostics) {
+      if (d.severity !== vscode.DiagnosticSeverity.Error) continue;
+      erreurs.push(`${path.basename(uri.fsPath)} ligne ${d.range.start.line + 1} : ${d.message}`);
+    }
+  }
+  return erreurs;
 }
 
 async function lireReference(
