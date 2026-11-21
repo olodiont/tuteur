@@ -2,9 +2,22 @@
 
 Un tuteur dans le chat de VS Code. Il t'aide à comprendre ce qu'il faut faire pour avancer sur ton exercice en cours, **sans te donner la solution**, et sans te faire perdre de temps.
 
-## Installation pas à pas
+## Installation rapide (2 minutes)
 
-Compte 5 minutes. L'extension n'est pas sur le Marketplace : on la construit à partir de ce dépôt, puis on l'installe dans VS Code.
+Il te faut seulement [VS Code](https://code.visualstudio.com/) 1.95 ou plus récent, et un compte GitHub.
+
+1. Télécharge **[tuteur-0.1.0.vsix](https://github.com/olodiont/tuteur/releases/latest/download/tuteur-0.1.0.vsix)** (page des [versions](https://github.com/olodiont/tuteur/releases)).
+2. Dans VS Code, ouvre la vue Extensions (`Ctrl+Shift+X`), clique sur les **…** en haut, choisis **Install from VSIX…** et sélectionne le fichier téléchargé.
+3. Connecte-toi à GitHub dans VS Code (icône de compte en bas à gauche) et active Copilot. L'offre **Copilot Free** suffit.
+4. Recharge VS Code (`Ctrl+Shift+P`, puis « Developer: Reload Window »), ouvre le chat (`Ctrl+Alt+I`) et tape `@tuteur bonjour`.
+
+Le tuteur répond, et **Tuteur : sans code gris** apparaît dans la barre d'état en bas : c'est installé.
+
+Pour mettre à jour, télécharge la nouvelle version sur la page des versions et réinstalle-la de la même façon.
+
+## Installation depuis le code source
+
+Pour modifier l'extension, ou si tu préfères la construire toi-même. Compte 5 minutes.
 
 ### 1. Ce qu'il te faut
 
