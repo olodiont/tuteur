@@ -172,3 +172,16 @@ Le prompt système impose :
 - Révision espacée 1/3/7/14/30 jours, rappel au plus une fois par jour en fin de réponse.
 - Mémoire globale, partagée entre tous les projets.
 - Installation locale en `.vsix`, pas de publication.
+
+## 9. Révision du 2026-11-20 : apprentissage limité à la session
+
+Après un premier essai, l'utilisateur abandonne la révision sur le long terme. L'apprentissage doit rester propre à la session : le tuteur l'aide à comprendre ce qu'il faut faire pour avancer sur l'exercice en cours.
+
+Ce qui change, et remplace les sections 5.1, 5.5, 5.6 et 6 :
+- Commandes : `@tuteur`, `/demarrer`, `/explique`, `/indice`. `/rappel` et `/notions` sont retirés.
+- Plus de mémoire des notions, plus de fichier `notions.json`, plus de rappels, plus de marqueurs `@@TUTEUR`.
+- La seule mémoire est la conversation du chat : le tuteur s'appuie sur ce qu'il a déjà expliqué dans cette conversation, sans le répéter.
+- Chaque réponse se termine par la prochaine étape concrète à faire dans le code de l'exercice en cours.
+- Un mini-cours (`/explique`) se termine en montrant où la notion sert dans l'exercice en cours.
+
+Inchangé : les modes coaching / rappel / mini-cours, l'échelle d'indices à 4 paliers, les garde-fous (jamais la solution complète, réponses courtes), le contexte envoyé au modèle.

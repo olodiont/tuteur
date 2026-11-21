@@ -6,6 +6,6 @@ test('déclare le participant tuteur et ses commandes', () => {
   expect(p.id).toBe('tuteur.tuteur');
   expect(p.name).toBe('tuteur');
   expect(p.commands.map((c: { name: string }) => c.name))
-    .toEqual(['demarrer', 'explique', 'indice', 'rappel', 'notions']);
+    .toEqual(['demarrer', 'explique', 'indice']);
   expect((pkg as any).engines.vscode).toBe('^1.95.0');
 });
