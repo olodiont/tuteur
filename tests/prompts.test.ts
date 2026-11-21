@@ -22,7 +22,7 @@ describe('calculerPalier', () => {
 });
 
 describe('promptSysteme', () => {
-  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice', 'fait'];
+  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice', 'verifie'];
 
   test.each(modes)('le mode %s rappelle les garde-fous', (mode) => {
     const p = promptSysteme(mode, { palier: 1 });
@@ -78,7 +78,7 @@ describe('determinerMode', () => {
 });
 
 describe('consignes affinées', () => {
-  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice', 'fait'];
+  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice', 'verifie'];
 
   test.each(modes)('le mode %s sait ce qu’il voit (pas besoin de recopier le code)', (mode) => {
     expect(promptSysteme(mode, { palier: 1 })).toContain('autres fichiers ouverts');
@@ -94,12 +94,12 @@ describe('consignes affinées', () => {
 });
 
 describe('relecture 2', () => {
-  test('/fait est une commande', () => {
-    expect(determinerMode('fait')).toBe('fait');
+  test('/verifie est une commande', () => {
+    expect(determinerMode('verifie')).toBe('verifie');
   });
 
-  test('/fait remet le palier d’indice à zéro', () => {
-    expect(calculerPalier(['indice', 'indice', 'indice', 'indice', 'fait'])).toBe(1);
+  test('/verifie remet le palier d’indice à zéro', () => {
+    expect(calculerPalier(['indice', 'indice', 'indice', 'indice', 'verifie'])).toBe(1);
   });
 
   test('une réponse qui pose une question s’arrête sur la question', () => {
@@ -127,7 +127,7 @@ describe('relecture 2', () => {
   });
 
   test('mode fait : vérifie puis donne l’étape suivante', () => {
-    const p = promptSysteme('fait', {});
+    const p = promptSysteme('verifie', {});
     expect(p).toContain('Mode étape finie');
     expect(p).toContain('sans le corriger');
   });

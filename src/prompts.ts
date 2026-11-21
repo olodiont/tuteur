@@ -1,4 +1,4 @@
-export type Mode = 'auto' | 'demarrer' | 'explique' | 'indice' | 'fait';
+export type Mode = 'auto' | 'demarrer' | 'explique' | 'indice' | 'verifie';
 
 export const PALIER_MAX = 4;
 
@@ -6,7 +6,7 @@ export const PALIER_MAX = 4;
  * Palier de l'indice demandé : 1 + nombre de `/indice` depuis la dernière autre
  * commande (tours précédents, du plus ancien au plus récent), plafonné à 4.
  * Les réponses libres (sans commande) ne remettent pas le compteur à zéro ;
- * toute autre commande, dont `/fait` (étape finie), le remet à zéro.
+ * toute autre commande, dont `/verifie` (étape finie), le remet à zéro.
  */
 export function calculerPalier(commandesPrecedentes: (string | undefined)[]): number {
   let indices = 0;
@@ -18,7 +18,7 @@ export function calculerPalier(commandesPrecedentes: (string | undefined)[]): nu
   return Math.min(1 + indices, PALIER_MAX);
 }
 
-const COMMANDES: Mode[] = ['demarrer', 'explique', 'indice', 'fait'];
+const COMMANDES: Mode[] = ['demarrer', 'explique', 'indice', 'verifie'];
 
 export function determinerMode(commande: string | undefined): Mode {
   return COMMANDES.includes(commande as Mode) ? (commande as Mode) : 'auto';
@@ -66,7 +66,7 @@ Si l'énoncé n'est pas fourni, demande-lui de le coller ou de joindre le fichie
 - Un petit exemple de code qui n'est pas son exercice.
 - Puis, en une ou deux phrases, où et comment cette notion sert dans son exercice en cours.
 Si la notion est floue, demande-lui laquelle en une question.`,
-  fait: `Mode étape finie. Il pense avoir terminé l'étape en cours (voir la conversation).
+  verifie: `Mode étape finie. Il pense avoir terminé l'étape en cours (voir la conversation).
 1. Regarde son code. Si l'étape est bien faite, dis-le en une phrase, en citant ce qui est juste.
 2. Sinon, montre en une ou deux lignes ce qui manque ou ce qui cloche, sans le corriger à sa place, et arrête-toi là.
 3. Si c'est bon, donne la prochaine étape en une ligne, avec la notion utile.

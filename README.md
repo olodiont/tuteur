@@ -23,11 +23,11 @@ Recharge VS Code (`Ctrl+Shift+P` → « Developer: Reload Window »), ouvre le c
 | `@tuteur /demarrer <énoncé>` | Tu ne sais pas par où commencer. Colle l'énoncé, ou joins le fichier avec `#file:exo1.md`. |
 | `@tuteur /explique <notion>` | Une notion te manque : mini-cours d'un écran, relié à ton exercice. Ex. `/explique Iterator`. |
 | `@tuteur /indice` | Tu veux un indice plus précis. Chaque `/indice` monte d'un palier (affiché : *Indice 2/4*). |
-| `@tuteur /fait` | Tu as fini une étape : il vérifie ton code et te donne la suivante. Remet les indices au palier 1. |
+| `@tuteur /verifie` | Tu as fini une étape : il vérifie ton code et te donne la suivante. Remet les indices au palier 1. |
 
 Sous chaque réponse, des boutons te font gagner du temps :
 - **Indice plus précis** : comme `/indice`.
-- **C'est fait, étape suivante** : comme `/fait`.
+- **C'est fait, vérifie** : comme `/verifie`.
 - **Explique cette erreur** : apparaît quand ton fichier ne compile pas.
 
 ### Ce que voit le tuteur

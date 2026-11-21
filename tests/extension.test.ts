@@ -108,12 +108,12 @@ describe('handler @tuteur', () => {
     expect(resultat.metadata.palier).toBe(2);
   });
 
-  test('/fait remet le palier à zéro', async () => {
+  test('/verifie remet le palier à zéro', async () => {
     const { modele } = faireModele();
     const { resultat } = await appeler({
       command: 'indice',
       model: modele,
-      history: [reussi('indice', 1), reussi('indice', 2), reussi('indice', 3), reussi('fait')],
+      history: [reussi('indice', 1), reussi('indice', 2), reussi('indice', 3), reussi('verifie')],
     });
     expect(resultat.metadata.palier).toBe(1);
   });

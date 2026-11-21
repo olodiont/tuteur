@@ -189,9 +189,9 @@ Inchangé : les modes coaching / rappel / mini-cours, l'échelle d'indices à 4 
 ## 10. Améliorations du 2026-11-20 (revue complète)
 
 Décidées par Claude pendant une revue autonome demandée par l'utilisateur :
-- Commande `/fait` (étape finie) : vérifie le code et donne l'étape suivante. Elle remet le palier d'indice à 1, pour qu'une nouvelle étape ne commence pas au palier 4.
+- Commande `/verifie` (étape finie) : vérifie le code et donne l'étape suivante. Elle remet le palier d'indice à 1, pour qu'une nouvelle étape ne commence pas au palier 4.
 - Un `/indice` qui a échoué (pas de modèle, erreur) ne compte pas dans le palier.
-- Boutons sous chaque réponse : « Indice plus précis », « C'est fait, étape suivante », et « Explique cette erreur » si le fichier actif ne compile pas.
+- Boutons sous chaque réponse : « Indice plus précis », « C'est fait, vérifie », et « Explique cette erreur » si le fichier actif ne compile pas.
 - Palier affiché en tête des réponses `/indice` (*Indice 2/4*).
 - Contexte élargi aux autres fichiers ouverts et aux erreurs, limité au dossier de l'exercice (dossier du fichier actif, en remontant le paquet Java et `src`).
 - Limites de taille sur chaque élément du contexte ; historique gardé dans le budget du modèle (premier message et messages récents).

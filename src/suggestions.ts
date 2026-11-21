@@ -29,6 +29,6 @@ export function suggestions(metadata: unknown): Suggestion[] {
   if (!dernierPalier) {
     liste.push({ label: 'Indice plus précis', prompt: 'Un indice plus précis, stp.', command: 'indice' });
   }
-  liste.push({ label: "C'est fait, étape suivante", prompt: "C'est fait. Vérifie et donne-moi l'étape suivante.", command: 'fait' });
+  liste.push({ label: "C'est fait, vérifie", prompt: "C'est fait. Vérifie et donne-moi l'étape suivante.", command: 'verifie' });
   return liste;
 }

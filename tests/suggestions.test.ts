@@ -3,14 +3,14 @@ import { suggestions } from '../src/suggestions';
 
 test('après une réponse : indice plus précis et étape suivante', () => {
   const s = suggestions({ mode: 'auto', palier: 1 });
-  expect(s.map((x) => x.label)).toEqual(['Indice plus précis', "C'est fait, étape suivante"]);
+  expect(s.map((x) => x.label)).toEqual(['Indice plus précis', "C'est fait, vérifie"]);
   expect(s[0].command).toBe('indice');
-  expect(s[1].command).toBe('fait');
+  expect(s[1].command).toBe('verifie');
 });
 
 test('au dernier palier : plus de bouton indice', () => {
   const s = suggestions({ mode: 'indice', palier: 4 });
-  expect(s.map((x) => x.label)).toEqual(["C'est fait, étape suivante"]);
+  expect(s.map((x) => x.label)).toEqual(["C'est fait, vérifie"]);
 });
 
 test('palier 3 en mode indice : le bouton indice reste', () => {
