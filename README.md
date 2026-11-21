@@ -13,18 +13,31 @@ Un tuteur dans le chat de VS Code. Il t'aide à comprendre ce qu'il faut faire p
 code --install-extension tuteur-0.1.0.vsix
 ```
 
-Puis ouvre le chat de VS Code (`Ctrl+Alt+I`) et tape `@tuteur`.
+Recharge VS Code (`Ctrl+Shift+P` → « Developer: Reload Window »), ouvre le chat (`Ctrl+Alt+I`) et tape `@tuteur`.
 
 ## Utilisation
 
 | Commande | Quand l'utiliser |
 |---|---|
 | `@tuteur <ta question>` | Tu bloques : il devine pourquoi et choisit l'aide adaptée. |
-| `@tuteur /demarrer <énoncé>` | Tu ne sais pas par où commencer. Colle l'énoncé, ou joins le fichier avec `#file`. |
+| `@tuteur /demarrer <énoncé>` | Tu ne sais pas par où commencer. Colle l'énoncé, ou joins le fichier avec `#file:exo1.md`. |
 | `@tuteur /explique <notion>` | Une notion te manque : mini-cours d'un écran, relié à ton exercice. Ex. `/explique Iterator`. |
-| `@tuteur /indice` | Tu veux un indice plus précis. Chaque `/indice` monte d'un palier (4 au maximum). |
+| `@tuteur /indice` | Tu veux un indice plus précis. Chaque `/indice` monte d'un palier (affiché : *Indice 2/4*). |
+| `@tuteur /fait` | Tu as fini une étape : il vérifie ton code et te donne la suivante. Remet les indices au palier 1. |
 
-Le tuteur voit ton fichier ouvert, ta sélection, les erreurs de compilation et les fichiers joints. Il n'a donc pas besoin que tu recopies ton code. Chaque réponse se termine par la prochaine étape à faire dans ton code.
+Sous chaque réponse, des boutons te font gagner du temps :
+- **Indice plus précis** : comme `/indice`.
+- **C'est fait, étape suivante** : comme `/fait`.
+- **Explique cette erreur** : apparaît quand ton fichier ne compile pas.
+
+### Ce que voit le tuteur
+
+- Ton fichier actif (200 lignes autour du curseur) et ta sélection.
+- Tes autres fichiers ouverts **du même exercice** (ex. `Student.java` pendant que tu écris `CourseRoster.java`).
+- Les erreurs de compilation de l'exercice.
+- Les fichiers que tu joins avec `#file`. L'énoncé joint au début reste visible pour toute la conversation.
+
+Il ne voit pas la sortie de ton programme ni le terminal : pour une erreur à l'exécution, colle le message dans le chat.
 
 L'apprentissage reste propre à la conversation : le tuteur se souvient de ce qu'il t'a déjà expliqué dans le chat en cours, et rien n'est gardé ensuite. Pour un nouvel exercice, ouvre un nouveau chat.
 
@@ -33,15 +46,14 @@ L'apprentissage reste propre à la conversation : le tuteur se souvient de ce qu
 1. Une question qui t'oriente.
 2. Un indice concret : quelle notion, quelle méthode.
 3. Un squelette avec des trous à compléter.
-4. Le code de la seule partie bloquante, expliqué ligne par ligne.
+4. Le code de la seule partie bloquante, expliqué ligne par ligne (un squelette détaillé si l'exercice est tout petit).
 
 ## Développement
 
 ```powershell
 npm install
 npm test
-npm run compile
 npm run package
 ```
 
-`F5` dans VS Code lance une fenêtre de test avec l'extension.
+`npm run package` recompile puis crée le `.vsix`. `F5` dans VS Code lance une fenêtre de test avec l'extension.
