@@ -40,8 +40,18 @@
           {
             "name": "verifie",
             "description": "J'ai fini cette étape : vérifie et donne la suivante"
+          },
+          {
+            "name": "stop",
+            "description": "Remet l'autocomplétion de Copilot (coupée quand tu utilises le tuteur)"
           }
         ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "tuteur.remettreAutocompletion",
+        "title": "Tuteur : remettre l'autocomplétion de Copilot"
       }
     ]
   },

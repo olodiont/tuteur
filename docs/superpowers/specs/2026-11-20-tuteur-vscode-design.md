@@ -197,3 +197,15 @@ Décidées par Claude pendant une revue autonome demandée par l'utilisateur :
 - Limites de taille sur chaque élément du contexte ; historique gardé dans le budget du modèle (premier message et messages récents).
 - Consignes : 8 lignes / ~120 mots, pas de « prochaine étape » après une question, indices sans répétition, l'exercice en cours défini, demande du message d'erreur pour les erreurs à l'exécution.
 - Message clair quand le quota Copilot est atteint ; plus de dépendance déclarée à l'extension Copilot.
+
+## 11. Autocomplétion coupée pendant l'apprentissage (2026-11-20)
+
+Demande de l'utilisateur : quand il utilise @tuteur, l'autocomplétion est coupée ; `@tuteur /stop` la remet.
+Choix de l'utilisateur : seulement le code gris de Copilot (suggestions en ligne). La liste IntelliSense des noms de méthodes reste.
+
+- Toute demande à @tuteur (sauf `/stop`) coupe le réglage utilisateur `editor.inlineSuggest.enabled` (mis à `false`), en mémorisant sa valeur d'avant (ou son absence) dans le stockage de l'extension. Une ligne le signale dans le chat la première fois.
+- `/stop` remet la valeur d'avant (ou retire le réglage s'il n'existait pas), sans appeler le modèle. Sans coupure en cours, il le dit et ne touche à rien.
+- Indicateur dans la barre d'état pendant la coupure ; un clic (commande `tuteur.remettreAutocompletion`) remet l'autocomplétion.
+- La coupure survit au redémarrage de VS Code, jusqu'à `/stop`.
+- Une erreur d'écriture du réglage n'empêche jamais le tuteur de répondre.
+- Limite connue : un réglage `editor.inlineSuggest.enabled: true` au niveau de l'espace de travail l'emporte sur le réglage utilisateur.

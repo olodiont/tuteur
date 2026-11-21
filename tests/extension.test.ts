@@ -39,7 +39,7 @@ async function appeler(opts: {
   history?: unknown[];
   model?: unknown;
 }) {
-  activate({ subscriptions: [] } as never);
+  activate({ subscriptions: [], globalState: vscode.etat.globalState } as never);
   const { stream, sortie } = faireStream();
   const resultat = await vscode.participantCree!.handler(
     { prompt: opts.prompt ?? '', command: opts.command, references: [], model: opts.model },
@@ -54,6 +54,57 @@ beforeEach(() => {
   vscode.etat.diagnostics = [];
   vscode.etat.modelesCopilot = [];
   vscode.window.activeTextEditor = undefined;
+  // Par défaut, l'autocomplétion est déjà coupée : les tests du handler ne voient pas l'annonce.
+  vscode.reinitialiserReglages({ 'editor.inlineSuggest.enabled': false }, { 'tuteur.autocompletion': { avant: true } });
+});
+
+describe('autocomplétion', () => {
+  beforeEach(() => vscode.reinitialiserReglages({ 'editor.inlineSuggest.enabled': true }, {}));
+
+  test('la première demande coupe le code gris et le dit', async () => {
+    const { modele } = faireModele({ reponse: ['Réponse.'] });
+    const { sortie } = await appeler({ prompt: 'aide', model: modele });
+    expect(vscode.etat.reglages.get('editor.inlineSuggest.enabled')).toBe(false);
+    expect(sortie).toContain('Autocomplétion de Copilot coupée');
+    expect(sortie).toContain('@tuteur /stop');
+    expect(sortie).toContain('Réponse.');
+  });
+
+  test('les demandes suivantes ne le répètent pas', async () => {
+    const { modele } = faireModele();
+    await appeler({ prompt: 'aide', model: modele });
+    const { sortie } = await appeler({ prompt: 'encore', model: modele });
+    expect(sortie).not.toContain('Autocomplétion de Copilot coupée');
+  });
+
+  test('/stop remet le réglage d’avant sans appeler le modèle', async () => {
+    const { modele, recu } = faireModele();
+    await appeler({ prompt: 'aide', model: modele });
+    const { sortie, resultat } = await appeler({ command: 'stop', model: modele });
+    expect(vscode.etat.reglages.get('editor.inlineSuggest.enabled')).toBe(true);
+    expect(sortie).toContain('Autocomplétion de Copilot remise');
+    expect(recu).toHaveLength(1);
+    expect(resultat).toEqual({});
+  });
+
+  test('/stop sans coupure : le dit, ne touche à rien', async () => {
+    const { sortie } = await appeler({ command: 'stop', model: faireModele().modele });
+    expect(sortie).toContain("n'était pas coupée");
+    expect(vscode.etat.reglages.get('editor.inlineSuggest.enabled')).toBe(true);
+  });
+
+  test('la barre d’état indique la coupure', async () => {
+    await appeler({ prompt: 'aide', model: faireModele().modele });
+    expect(vscode.etat.barre.visible).toBe(true);
+    await appeler({ command: 'stop', model: faireModele().modele });
+    expect(vscode.etat.barre.visible).toBe(false);
+  });
+
+  test('la commande de la barre d’état remet l’autocomplétion', async () => {
+    await appeler({ prompt: 'aide', model: faireModele().modele });
+    await vscode.etat.commandes.get('tuteur.remettreAutocompletion')!();
+    expect(vscode.etat.reglages.get('editor.inlineSuggest.enabled')).toBe(true);
+  });
 });
 
 describe('handler @tuteur', () => {

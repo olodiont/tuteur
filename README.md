@@ -24,11 +24,22 @@ Recharge VS Code (`Ctrl+Shift+P` → « Developer: Reload Window »), ouvre le c
 | `@tuteur /explique <notion>` | Une notion te manque : mini-cours d'un écran, relié à ton exercice. Ex. `/explique Iterator`. |
 | `@tuteur /indice` | Tu veux un indice plus précis. Chaque `/indice` monte d'un palier (affiché : *Indice 2/4*). |
 | `@tuteur /verifie` | Tu as fini une étape : il vérifie ton code et te donne la suivante. Remet les indices au palier 1. |
+| `@tuteur /stop` | Remet l'autocomplétion de Copilot (voir plus bas). Ne consomme pas de requête. |
 
 Sous chaque réponse, des boutons te font gagner du temps :
 - **Indice plus précis** : comme `/indice`.
 - **C'est fait, vérifie** : comme `/verifie`.
 - **Explique cette erreur** : apparaît quand ton fichier ne compile pas.
+
+### Autocomplétion coupée pendant que tu apprends
+
+Ta première demande à `@tuteur` coupe le **code gris de Copilot**, ces suggestions qui écrivent des lignes entières à ta place. La petite liste des noms de méthodes de VS Code (après `liste.`) reste là.
+
+- Pendant la coupure, la barre d'état en bas affiche **Tuteur : sans code gris**.
+- `@tuteur /stop`, ou un clic sur cet indicateur, remet le réglage exactement comme avant.
+- La coupure reste active même si tu fermes VS Code, jusqu'à `/stop`.
+
+Techniquement, le tuteur passe le réglage utilisateur `editor.inlineSuggest.enabled` à `false`. Si tu désinstalles l'extension sans faire `/stop`, remets ce réglage à la main dans les paramètres de VS Code.
 
 ### Ce que voit le tuteur
 

@@ -1,4 +1,12 @@
 import * as vscode from 'vscode';
+import {
+  CLE_REGLAGE,
+  couperAutocompletion,
+  estCoupee,
+  Reglage,
+  remettreAutocompletion,
+  SECTION,
+} from './autocompletion';
 import { formaterContexte } from './contexte';
 import { collecterContexte } from './contexte-vscode';
 import { budgetHistorique, selectionnerHistorique, Tour } from './historique';
@@ -46,7 +54,23 @@ const MESSAGE_QUOTA = `**Ta limite de requêtes Copilot est atteinte pour l'inst
 
 Réessaie plus tard, ou choisis un autre modèle dans le sélecteur du chat. Avec **GitHub Education** (étudiant), la limite est plus haute.`;
 
-const handler: vscode.ChatRequestHandler = async (request, chatContext, stream, token) => {
+const MESSAGE_COUPEE = `*Autocomplétion de Copilot coupée pendant que tu apprends (le code gris). La liste des noms de méthodes reste là. \`@tuteur /stop\` pour la remettre.*\n\n`;
+const MESSAGE_REMISE = `Autocomplétion de Copilot remise, comme avant. Ta prochaine demande à \`@tuteur\` la coupera de nouveau.`;
+const MESSAGE_PAS_COUPEE = `L'autocomplétion de Copilot n'était pas coupée par le tuteur : rien à remettre.`;
+
+/** Couper / remettre le code gris de Copilot, branché sur les réglages de VS Code. */
+interface Interrupteur {
+  couper(): Promise<boolean>;
+  remettre(): Promise<boolean>;
+}
+
+const creerHandler = (interrupteur: Interrupteur): vscode.ChatRequestHandler => async (request, chatContext, stream, token) => {
+  if (request.command === 'stop') {
+    stream.markdown((await interrupteur.remettre()) ? MESSAGE_REMISE : MESSAGE_PAS_COUPEE);
+    return {};
+  }
+  if (await interrupteur.couper()) stream.markdown(MESSAGE_COUPEE);
+
   const mode = determinerMode(request.command);
   const palier = calculerPalier(commandesReussies(chatContext.history));
   const docActif = vscode.window.activeTextEditor?.document;
@@ -106,12 +130,47 @@ const handler: vscode.ChatRequestHandler = async (request, chatContext, stream, 
 };
 
 export function activate(context: vscode.ExtensionContext): void {
-  const participant = vscode.chat.createChatParticipant('tuteur.tuteur', handler);
+  const reglage: Reglage = {
+    lireGlobal: () =>
+      vscode.workspace.getConfiguration(SECTION).inspect<boolean>(CLE_REGLAGE)?.globalValue,
+    ecrireGlobal: async (valeur) => {
+      await vscode.workspace.getConfiguration(SECTION).update(CLE_REGLAGE, valeur, vscode.ConfigurationTarget.Global);
+    },
+  };
+  const memoire = context.globalState;
+
+  const barre = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  barre.text = '$(mortar-board) Tuteur : sans code gris';
+  barre.tooltip = "Le tuteur a coupé l'autocomplétion de Copilot. Clique pour la remettre.";
+  barre.command = 'tuteur.remettreAutocompletion';
+  const majBarre = () => (estCoupee(memoire) ? barre.show() : barre.hide());
+  majBarre();
+
+  // Un réglage illisible ou non modifiable ne doit jamais empêcher le tuteur de répondre.
+  const sansErreur = async (action: () => Promise<boolean>) => {
+    try {
+      return await action();
+    } catch {
+      return false;
+    } finally {
+      majBarre();
+    }
+  };
+  const interrupteur: Interrupteur = {
+    couper: () => sansErreur(() => couperAutocompletion(reglage, memoire)),
+    remettre: () => sansErreur(() => remettreAutocompletion(reglage, memoire)),
+  };
+
+  const commande = vscode.commands.registerCommand('tuteur.remettreAutocompletion', async () => {
+    if (await interrupteur.remettre()) vscode.window.showInformationMessage(MESSAGE_REMISE);
+  });
+
+  const participant = vscode.chat.createChatParticipant('tuteur.tuteur', creerHandler(interrupteur));
   participant.iconPath = new vscode.ThemeIcon('mortar-board');
   participant.followupProvider = {
     provideFollowups: (result) => (result.metadata ? suggestions(result.metadata) : []),
   };
-  context.subscriptions.push(participant);
+  context.subscriptions.push(participant, barre, commande);
 }
 
 export function deactivate(): void {}

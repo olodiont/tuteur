@@ -67,14 +67,69 @@ Object.defineProperty(LanguageModelError.NoPermissions, 'name', { value: 'NoPerm
 Object.defineProperty(LanguageModelError.Blocked, 'name', { value: 'Blocked' });
 Object.defineProperty(LanguageModelError.NotFound, 'name', { value: 'NotFound' });
 
+export enum ConfigurationTarget {
+  Global = 1,
+  Workspace = 2,
+  WorkspaceFolder = 3,
+}
+export enum StatusBarAlignment {
+  Left = 1,
+  Right = 2,
+}
+
+function faireMemento(valeurs: Map<string, unknown>) {
+  return {
+    get: (cle: string) => valeurs.get(cle),
+    update: async (cle: string, v: unknown) => {
+      if (v === undefined) valeurs.delete(cle);
+      else valeurs.set(cle, v);
+    },
+  };
+}
+
 export const etat = {
   diagnostics: [] as [Uri, { severity: DiagnosticSeverity; message: string; range: { start: { line: number } } }[]][],
   modelesCopilot: [] as unknown[],
+  /** Réglages utilisateur (globaux), clé complète « section.cle ». */
+  reglages: new Map<string, unknown>(),
+  memoire: new Map<string, unknown>(),
+  globalState: faireMemento(new Map()),
+  barre: { text: '', tooltip: '', command: '', visible: false },
+  commandes: new Map<string, () => unknown>(),
+};
+
+export function reinitialiserReglages(reglages: Record<string, unknown>, memoire: Record<string, unknown>) {
+  etat.reglages = new Map(Object.entries(reglages));
+  etat.memoire = new Map(Object.entries(memoire));
+  etat.globalState = faireMemento(etat.memoire);
+  etat.barre = { text: '', tooltip: '', command: '', visible: false };
+  etat.commandes = new Map();
+}
+
+export const commands = {
+  registerCommand: (id: string, fn: () => unknown) => {
+    etat.commandes.set(id, fn);
+    return { dispose: () => etat.commandes.delete(id) };
+  },
 };
 
 export const window = {
   activeTextEditor: undefined as unknown,
   tabGroups: { all: [] as { tabs: { input: unknown }[] }[] },
+  showInformationMessage: (_m: string) => undefined,
+  createStatusBarItem: () => {
+    const barre = etat.barre;
+    return {
+      set text(t: string) { etat.barre.text = t; },
+      get text() { return etat.barre.text; },
+      set tooltip(t: string) { etat.barre.tooltip = t; },
+      set command(c: string) { etat.barre.command = c; },
+      show: () => { etat.barre.visible = true; },
+      hide: () => { etat.barre.visible = false; },
+      dispose: () => undefined,
+      _barre: barre,
+    };
+  },
 };
 
 export const languages = {
@@ -85,6 +140,13 @@ export const languages = {
 };
 
 export const workspace = {
+  getConfiguration: (section: string) => ({
+    inspect: (cle: string) => ({ globalValue: etat.reglages.get(`${section}.${cle}`) }),
+    update: async (cle: string, valeur: unknown, _cible: ConfigurationTarget) => {
+      if (valeur === undefined) etat.reglages.delete(`${section}.${cle}`);
+      else etat.reglages.set(`${section}.${cle}`, valeur);
+    },
+  }),
   fs: { stat: async () => ({ type: FileType.File, size: 10 }) },
   openTextDocument: async () => {
     throw new Error('non simulé');
