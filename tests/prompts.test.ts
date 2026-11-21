@@ -76,3 +76,19 @@ describe('determinerMode', () => {
     expect(determinerMode('rappel')).toBe('auto');
   });
 });
+
+describe('consignes affinées', () => {
+  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice'];
+
+  test.each(modes)('le mode %s sait ce qu’il voit (pas besoin de recopier le code)', (mode) => {
+    expect(promptSysteme(mode, { palier: 1 })).toContain('autres fichiers ouverts');
+  });
+
+  test.each(modes)('le mode %s demande la trace d’une erreur à l’exécution', (mode) => {
+    expect(promptSysteme(mode, { palier: 1 })).toContain("message d'erreur complet");
+  });
+
+  test.each(modes)('le mode %s vérifie le code quand une étape est annoncée finie', (mode) => {
+    expect(promptSysteme(mode, { palier: 1 })).toContain('fini une étape');
+  });
+});
