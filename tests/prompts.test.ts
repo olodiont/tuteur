@@ -22,7 +22,7 @@ describe('calculerPalier', () => {
 });
 
 describe('promptSysteme', () => {
-  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice'];
+  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice', 'fait'];
 
   test.each(modes)('le mode %s rappelle les garde-fous', (mode) => {
     const p = promptSysteme(mode, { palier: 1 });
@@ -78,7 +78,7 @@ describe('determinerMode', () => {
 });
 
 describe('consignes affinées', () => {
-  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice'];
+  const modes: Mode[] = ['auto', 'demarrer', 'explique', 'indice', 'fait'];
 
   test.each(modes)('le mode %s sait ce qu’il voit (pas besoin de recopier le code)', (mode) => {
     expect(promptSysteme(mode, { palier: 1 })).toContain('autres fichiers ouverts');
@@ -90,5 +90,45 @@ describe('consignes affinées', () => {
 
   test.each(modes)('le mode %s vérifie le code quand une étape est annoncée finie', (mode) => {
     expect(promptSysteme(mode, { palier: 1 })).toContain('fini une étape');
+  });
+});
+
+describe('relecture 2', () => {
+  test('/fait est une commande', () => {
+    expect(determinerMode('fait')).toBe('fait');
+  });
+
+  test('/fait remet le palier d’indice à zéro', () => {
+    expect(calculerPalier(['indice', 'indice', 'indice', 'indice', 'fait'])).toBe(1);
+  });
+
+  test('une réponse qui pose une question s’arrête sur la question', () => {
+    expect(promptSysteme('auto', {})).toContain('sauf si ta réponse est une question');
+  });
+
+  test('le mode indice va un cran plus loin sans répéter', () => {
+    expect(promptSysteme('indice', { palier: 2 })).toContain('ne les répète pas');
+  });
+
+  test('longueur chiffrée', () => {
+    expect(promptSysteme('auto', {})).toContain('120 mots');
+  });
+
+  test('ne rappelle plus /indice à chaque réponse', () => {
+    expect(promptSysteme('auto', {})).not.toContain("rappelle-lui qu'il peut taper");
+  });
+
+  test('le rappel d’une notion utilise un exemple qui n’est pas l’exercice', () => {
+    expect(promptSysteme('auto', {})).toContain("1 à 5 lignes de code qui n'est pas son exercice");
+  });
+
+  test('définit l’exercice en cours', () => {
+    expect(promptSysteme('auto', {})).toContain("L'exercice en cours");
+  });
+
+  test('mode fait : vérifie puis donne l’étape suivante', () => {
+    const p = promptSysteme('fait', {});
+    expect(p).toContain('Mode étape finie');
+    expect(p).toContain('sans le corriger');
   });
 });

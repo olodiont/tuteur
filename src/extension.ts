@@ -3,7 +3,7 @@ import { formaterContexte } from './contexte';
 import { collecterContexte } from './contexte-vscode';
 import { budgetHistorique, selectionnerHistorique, Tour } from './historique';
 import { choisirModele, MESSAGE_SANS_MODELE } from './modele';
-import { calculerPalier, determinerMode, promptSysteme } from './prompts';
+import { calculerPalier, determinerMode, PALIER_MAX, promptSysteme } from './prompts';
 import { Metadonnees, suggestions } from './suggestions';
 
 type TourChat = vscode.ChatRequestTurn | vscode.ChatResponseTurn;
@@ -30,13 +30,30 @@ function toursPrecedents(historique: ReadonlyArray<TourChat>): Tour[] {
   return tours;
 }
 
+/**
+ * Commandes des réponses réussies (celles qui ont des métadonnées) : un `/indice`
+ * qui a échoué (pas de modèle, erreur) ne fait pas monter le palier.
+ */
+function commandesReussies(historique: ReadonlyArray<TourChat>): (string | undefined)[] {
+  return historique
+    .filter((t): t is vscode.ChatResponseTurn => t instanceof vscode.ChatResponseTurn)
+    .map((t) => (t.result.metadata as Metadonnees | undefined)?.mode)
+    .filter((mode): mode is string => typeof mode === 'string')
+    .map((mode) => (mode === 'auto' ? undefined : mode));
+}
+
+const MESSAGE_QUOTA = `**Ta limite de requêtes Copilot est atteinte pour l'instant.**
+
+Réessaie plus tard, ou choisis un autre modèle dans le sélecteur du chat. Avec **GitHub Education** (étudiant), la limite est plus haute.`;
+
 const handler: vscode.ChatRequestHandler = async (request, chatContext, stream, token) => {
-  const commandesPrecedentes = chatContext.history
-    .filter((t): t is vscode.ChatRequestTurn => t instanceof vscode.ChatRequestTurn)
-    .map((t) => t.command);
   const mode = determinerMode(request.command);
-  const palier = calculerPalier(commandesPrecedentes);
-  const metadata: Metadonnees = { mode, palier };
+  const palier = calculerPalier(commandesReussies(chatContext.history));
+  const docActif = vscode.window.activeTextEditor?.document;
+  const aDesErreurs = docActif
+    ? vscode.languages.getDiagnostics(docActif.uri).some((d) => d.severity === vscode.DiagnosticSeverity.Error)
+    : false;
+  const metadata: Metadonnees = { mode, palier, aDesErreurs };
 
   const modele = await choisirModele(request.model);
   if (!modele) {
@@ -44,6 +61,7 @@ const handler: vscode.ChatRequestHandler = async (request, chatContext, stream, 
     return {};
   }
 
+  if (mode === 'indice') stream.markdown(`*Indice ${palier}/${PALIER_MAX}*\n\n`);
   stream.progress('Je regarde ton code…');
   const systeme = promptSysteme(mode, { palier });
   const contexte = formaterContexte(await collecterContexte(request, chatContext.history));
@@ -73,7 +91,12 @@ const handler: vscode.ChatRequestHandler = async (request, chatContext, stream, 
       const sansAcces =
         err.code === vscode.LanguageModelError.NoPermissions.name ||
         err.code === vscode.LanguageModelError.NotFound.name;
-      stream.markdown(sansAcces ? MESSAGE_SANS_MODELE : `Le modèle a renvoyé une erreur : ${err.message}`);
+      const quota = err.code === vscode.LanguageModelError.Blocked.name;
+      stream.markdown(
+        sansAcces ? MESSAGE_SANS_MODELE
+          : quota ? MESSAGE_QUOTA
+          : `Le modèle a renvoyé une erreur : ${err.message}`,
+      );
       return {};
     }
     if (token.isCancellationRequested) return {};

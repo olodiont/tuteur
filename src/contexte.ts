@@ -14,8 +14,10 @@ export interface DonneesContexte {
   autresFichiers?: FichierOuvert[];
   /** Onglets ouverts en plus, non lus pour rester sous les limites. */
   autresFichiersNonJoints?: number;
-  /** Erreurs des autres fichiers du projet. */
+  /** Erreurs des autres fichiers de l'exercice. */
   erreursProjet?: string[];
+  /** Pièces jointes qui n'ont pas pu être lues. */
+  piecesIgnorees?: string[];
 }
 
 /** Limites de taille, pour garder des réponses rapides et ne pas dépasser ce que le modèle accepte. */
@@ -25,6 +27,7 @@ export const LIMITES = {
   autreFichier: 6_000,
   autresFichiersMax: 5,
   reference: 15_000,
+  referencesTotal: 30_000,
   erreursMax: 15,
 };
 
@@ -102,11 +105,47 @@ export function formaterContexte(d: DonneesContexte): string {
   }
 
   if (d.references.length > 0) {
-    const pieces = d.references.map(
-      (r) => `### ${r.nom}\n${blocCode(tronquerCaracteres(r.contenu, LIMITES.reference))}`,
-    );
+    let utilise = 0;
+    const pieces = d.references.map((r) => {
+      const contenu = tronquerCaracteres(r.contenu, LIMITES.reference);
+      if (utilise > 0 && utilise + contenu.length > LIMITES.referencesTotal) {
+        return `### ${r.nom} (non incluse : limite de taille atteinte)`;
+      }
+      utilise += contenu.length;
+      return `### ${r.nom}\n${blocCode(contenu)}`;
+    });
     sections.push(`## Pièces jointes\n${pieces.join('\n\n')}`);
   }
 
+  if (d.piecesIgnorees && d.piecesIgnorees.length > 0) {
+    sections.push(`Pièces jointes ignorées : ${d.piecesIgnorees.join(', ')} (illisibles ou trop grosses).`);
+  }
+
   return sections.join('\n\n');
+}
+
+const versSlash = (chemin: string) => chemin.replace(/\\/g, '/');
+
+/**
+ * Dossier de l'exercice d'un fichier : son dossier, en remontant le paquet Java
+ * (`package a.b;`) puis un `src` ou `src/main/java` final.
+ */
+export function racineExercice(cheminFichier: string, contenu: string): string {
+  let dossier = versSlash(cheminFichier).split('/').slice(0, -1);
+  const paquet = contenu.match(/^\s*package\s+([\w.]+)\s*;/m);
+  if (paquet) {
+    const parties = paquet[1].split('.');
+    const fin = dossier.slice(-parties.length);
+    if (fin.length !== parties.length || fin.some((p, i) => p !== parties[i])) return dossier.join('/');
+    dossier = dossier.slice(0, -parties.length);
+  }
+  if (dossier.slice(-3).join('/') === 'src/main/java') dossier = dossier.slice(0, -3);
+  else if (dossier.at(-1) === 'src') dossier = dossier.slice(0, -1);
+  return dossier.join('/');
+}
+
+/** Vrai si le fichier est dans le dossier (séparateurs et casse ignorés). */
+export function dansDossier(cheminFichier: string, dossier: string): boolean {
+  const n = (s: string) => versSlash(s).toLowerCase().replace(/\/+$/, '');
+  return n(cheminFichier).startsWith(`${n(dossier)}/`);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { cloture, formaterContexte, tronquerAutourDuCurseur, tronquerCaracteres } from '../src/contexte';
+import { cloture, dansDossier, formaterContexte, racineExercice, tronquerAutourDuCurseur, tronquerCaracteres } from '../src/contexte';
 
 const lignes = (n: number) => Array.from({ length: n }, (_, i) => `ligne ${i}`).join('\n');
 
@@ -152,4 +152,46 @@ test('les onglets non lus sont comptés dans la mention', () => {
     autresFichiersNonJoints: 2,
   });
   expect(t).toContain('2 autres fichiers ouverts non joints');
+});
+
+describe('relecture 2 : pièces jointes', () => {
+  test('pièces jointes ignorées signalées', () => {
+    const t = formaterContexte({ diagnostics: [], references: [], piecesIgnorees: ['image.png'] });
+    expect(t).toContain('Pièces jointes ignorées : image.png');
+  });
+
+  test('plafond total sur les pièces jointes', () => {
+    const refs = Array.from({ length: 5 }, (_, i) => ({ nom: `r${i}.txt`, contenu: 'z'.repeat(20_000) }));
+    const t = formaterContexte({ diagnostics: [], references: refs });
+    expect(t.length).toBeLessThan(40_000);
+    expect(t).toContain('r4.txt (non incluse : limite de taille atteinte)');
+  });
+});
+
+describe('racineExercice', () => {
+  test('fichier dans un paquet Java sous src : racine = dossier de l’exercice', () => {
+    expect(racineExercice(String.raw`C:\cours\exo1\src\university\model\Student.java`, 'package university.model;\n\nclass Student {}'))
+      .toBe('C:/cours/exo1');
+  });
+
+  test('sans paquet, sous src', () => {
+    expect(racineExercice('/cours/exo2/src/Main.java', 'public class Main {}')).toBe('/cours/exo2');
+  });
+
+  test('sans paquet ni src : dossier du fichier', () => {
+    expect(racineExercice('/cours/exo3/Main.java', 'class Main {}')).toBe('/cours/exo3');
+  });
+
+  test('paquet qui ne correspond pas au chemin : dossier du fichier', () => {
+    expect(racineExercice('/cours/exo4/Main.java', 'package autre.chose;')).toBe('/cours/exo4');
+  });
+});
+
+describe('dansDossier', () => {
+  test('séparateurs et casse ignorés', () => {
+    expect(dansDossier(String.raw`C:\Cours\Exo1\src\Main.java`, 'c:/cours/exo1')).toBe(true);
+  });
+  test('un dossier voisin au nom proche n’est pas dedans', () => {
+    expect(dansDossier('/cours/exo10/Main.java', '/cours/exo1')).toBe(false);
+  });
 });

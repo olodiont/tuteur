@@ -15,9 +15,6 @@
     "Education"
   ],
   "activationEvents": [],
-  "extensionDependencies": [
-    "github.copilot-chat"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "chatParticipants": [
@@ -39,12 +36,17 @@
           {
             "name": "indice",
             "description": "Indice suivant, plus précis, sur le blocage en cours"
+          },
+          {
+            "name": "fait",
+            "description": "J'ai fini cette étape : vérifie et donne la suivante"
           }
         ]
       }
     ]
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p .",
     "test": "vitest run",
     "package": "vsce package --no-dependencies --allow-missing-repository --skip-license"
